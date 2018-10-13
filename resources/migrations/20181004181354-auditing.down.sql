@@ -1,0 +1,3 @@
+-- DROP TRIGGER if exists audit_trigger_row ON payment_gateway_requests;
+-- DROP TRIGGER if exists audit_trigger_row ON transactions;
+-- DROP TRIGGER if exists audit_trigger_row ON purchase_orders;

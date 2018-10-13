@@ -1,0 +1,3 @@
+-- SELECT audit.audit_table('purchase_orders');
+-- SELECT audit.audit_table('transactions');
+-- SELECT audit.audit_table('payment_gateway_requests');
