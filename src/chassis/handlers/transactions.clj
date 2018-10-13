@@ -32,8 +32,8 @@
 (s/def ::tx-payment-request (s/keys :req-un [::amount ::items ::payment-method ::payment-entity]
                                     :opt-un [::cost ::billable ::payment-method-authorization]))
 
-(defn payment-handler [payment-session tx-payment]
-  (http/translate (intent/sale payment-session tx-payment)))
+(defn payment-handler [uuid payment-session tx-payment]
+  (http/translate (intent/sale uuid payment-session tx-payment)))
 
 (defn load-payment-session [handler]
   (fn [{:keys [params] :as request}]
@@ -50,4 +50,4 @@
 
     (POST "/transactions/sale" request
       :body [body ::tx-payment-request]
-      (payment-handler (:ps request) body))))
+      (payment-handler (get-in request [:params :uuid]) (:ps request) body))))

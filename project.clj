@@ -29,6 +29,7 @@
                  [org.clojure/tools.logging "0.4.1"]
                  [ch.qos.logback/logback-classic "1.2.3"]
 
+                 [potemkin "0.4.5"]
 
                  ;;json
                  [cheshire "5.8.1"]

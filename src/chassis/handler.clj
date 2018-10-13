@@ -3,7 +3,8 @@
             [ring.util.http-response :refer :all]
             [buddy.auth.middleware :refer [wrap-authentication]]
             [metrics.ring.instrument :refer [instrument instrument-by uri-prefix]]
-            [chassis.handlers.core :as core]))
+            [chassis.handlers.core :as core])
+  (:import (org.slf4j MDC)))
 
 (def swagger-api
   (api
@@ -29,8 +30,17 @@
           params (merge params {:uuid uuid})]
       (handler (merge request {:params params})))))
 
+(defn log-mdc [handler]
+  (fn [request]
+    (try
+      (when-let [uuid (get-in request [:params :uuid])]
+        (MDC/put "uuid" uuid))
+      (handler request)
+      (finally
+        (MDC/clear)))))
+
 (def app
   (-> swagger-api
-      ;; expose-metrics-as-json ;; are exposed via swagger
+      log-mdc
       uuid-generator
       (instrument-by uri-prefix)))
