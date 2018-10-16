@@ -31,6 +31,8 @@
 
                  [potemkin "0.4.5"]
 
+                 [org.slf4j/jul-to-slf4j "1.7.25"]
+
                  ;;json
                  [cheshire "5.8.1"]
                  [camel-snake-kebab "0.4.0"]

@@ -2,15 +2,33 @@
   (:require [chassis.config :refer [config]]
             [mount.core :refer [defstate]]
             [braintree-clj.core :as bt-core]
+            [braintree-clj.gateway.core :as g]
             [braintree-clj.gateway.customer :as bt-cg]
             [braintree-clj.customer-request :as bt-cr]
             [braintree-clj.customer :as bt-customer]
-            [braintree-clj.result :as result]))
+            [braintree-clj.result :as result]
+
+            [braintree-clj.core :as braintree]
+            [braintree-clj.transaction-request :as bt-tr]
+            [braintree-clj.result :as bt-r]
+            [braintree-clj.transaction :as bt-tx]
+
+            [clojure.tools.logging :as log]
+            [braintree-clj.transaction-request :as bt-tr]
+            [cats.monad.either :as m-either]
+            [clojure.stacktrace :as st]))
+
+(defn payment-entity->merchant [payment-entity]
+  "runtime")
+
+(defn capture-stack-trace [e]
+  (with-out-str
+    (st/print-stack-trace e)))
 
 (defn build-gateway [conf]
    (cond
      (nil? (:braintree conf)) (bt-core/create-gateway)
-     :else (bt-core/create-gateway (:braintree conf))))
+     :else  (bt-core/create-gateway (:braintree conf))))
 
 (defstate gateway
           :start (build-gateway config))
@@ -26,3 +44,30 @@
         (if (result/success? customer-result)
           (bt-customer/to-map customer)
           (throw (ex-info "cant create customer" {:errors (result/errors customer-result)}))))))
+
+
+(defn- tx-request [{:keys [payment-method-nonce customer-id amount order-id merchant]}]
+  (bt-tr/create {:customer-id           customer-id
+                 :amount                amount
+                 :merchant-account-id   merchant
+                 :submit-for-settlement true
+                 :payment-method-nonce  payment-method-nonce
+                 :order-id              order-id}))
+
+(defn- bt-tx-sale [{:keys [customer-id amount payment-method-authorization payment-entity correlation]}]
+  (let [result (braintree/tx-sale (tx-request {:customer-id          customer-id
+                                               :amount               amount
+                                               :payment-method-nonce payment-method-authorization
+                                               :merchant             (payment-entity->merchant payment-entity)
+                                               :order-id             correlation}))]
+    (if (bt-r/success? result)
+      (m-either/right (bt-tx/to-map (bt-r/target result)))
+      (m-either/left  {:error (bt-r/message result)}))))
+
+(defn tx-sale [{:keys [customer-id amount payment-method-authorization payment-entity correlation] :as params}]
+  (log/info "calling braintree transaction sale -> :customer-id" customer-id, ":correlation" correlation)
+  (try
+    (bt-tx-sale params)
+    (catch Exception e
+      (m-either/left {:stacktrace (capture-stack-trace e)}))))
+

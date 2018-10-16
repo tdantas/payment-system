@@ -2,7 +2,11 @@
   (:require [mount.core]
             [robert.hooke :refer [add-hook clear-hooks]]
             [clojure.string :refer [split]]
-            [clojure.tools.logging :refer [info]]))
+            [clojure.tools.logging :refer [info]])
+  (:import (org.slf4j.bridge SLF4JBridgeHandler)))
+
+(SLF4JBridgeHandler/removeHandlersForRootLogger)
+(SLF4JBridgeHandler/install)
 
 (alter-meta! *ns* assoc ::load false)
 

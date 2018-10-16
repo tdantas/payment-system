@@ -13,5 +13,5 @@ CREATE TABLE IF NOT EXISTS transactions (
    gateway_response jsonb default '{}'::jsonb,
 
    status         varchar,
-   session_id     integer references payment_sessions not null,
+   session_id        integer references payment_sessions not null,
    created_at     timestamp default now());

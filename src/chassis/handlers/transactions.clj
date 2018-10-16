@@ -6,11 +6,15 @@
             [spec-tools.data-spec :as dspec]
 
 
+
             [chassis.http :as http]
 
-            [chassis.services.intent :as intent]
+            [chassis.services.transaction-refund :as tx-refund]
+            [chassis.services.transaction-sale :as tx-sale]
+
             [metrics.ring.expose :refer [render-metrics serve-metrics]]
-            [chassis.repositories.payment-sessions :as ps]))
+            [chassis.repositories.payment-sessions :as ps]
+            [chassis.handlers.middlewares :as mw]))
 
 (s/def ::amount spec/number?)
 (s/def ::cost spec/number?)
@@ -23,7 +27,6 @@
 (s/def ::payment-entity spec/string?)
 (s/def ::payment-method-authorization spec/string?)
 
-
 (s/def ::payment-method #{"cc" "bank"})
 
 (s/def ::item   (s/keys :req-un [::name ::qty ::total ::unit]))
@@ -32,22 +35,27 @@
 (s/def ::tx-payment-request (s/keys :req-un [::amount ::items ::payment-method ::payment-entity]
                                     :opt-un [::cost ::billable ::payment-method-authorization]))
 
-(defn payment-handler [uuid payment-session tx-payment]
-  (http/translate (intent/sale uuid payment-session tx-payment)))
+(s/def ::tx-refund-request (s/keys :req-un [::amount]))
 
-(defn load-payment-session [handler]
-  (fn [{:keys [params] :as request}]
-    (if-let [ps (ps/find-by-id (:psid params))]
-      (handler (assoc request :ps ps))
-      (not-found {:code "NOT_FOUND"}))))
+(defn payment-handler [uuid payment-session tx-payment]
+  (http/translate (tx-sale/sale uuid payment-session tx-payment)))
+
+(defn refund-handler [uuid payment-session tx-refund]
+  (http/translate (tx-refund/refund uuid payment-session tx-refund)))
 
 (def app
   (context "/payment-sessions/:psid" []
     :tags ["spec"]
     :coercion :spec
     :path-params [psid :- spec/int?]
-    :middleware [load-payment-session]
+    :middleware [mw/load-payment-session]
 
-    (POST "/transactions/sale" request
+    (POST "/transactions/sale" {{:keys [uuid session]} :app :as r}
       :body [body ::tx-payment-request]
-      (payment-handler (get-in request [:params :uuid]) (:ps request) body))))
+      :middleware [(mw/register-intent "SALE")]
+      (payment-handler uuid session body))
+
+    (POST "/transactions/refund" {{:keys [uuid session]} :app}
+      :body [body ::tx-refund-request]
+      :middleware [(mw/register-intent "REFUND")]
+      (refund-handler uuid session body))))
