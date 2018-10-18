@@ -10,7 +10,7 @@
             [chassis.http :as http]
 
             [chassis.services.transaction-refund :as tx-refund]
-            [chassis.services.transaction-sale :as tx-sale]
+            [chassis.services.sale :as tx-sale]
 
             [cats.core :refer [bind mlet]]
 
@@ -37,7 +37,7 @@
 (s/def ::items (s/coll-of ::item))
 
 (s/def ::sale-order (s/keys :req-un [::amount ::items ::payment-method ::payment-entity ::currency]
-                            :opt-un [::cost ::billable ::payment-method-authorization]))
+                            :opt-un [::payment-method-authorization]))
 
 (s/def ::refund-order (s/keys :req-un [::amount]))
 

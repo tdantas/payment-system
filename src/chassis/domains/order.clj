@@ -8,13 +8,14 @@
             [cats.monad.either :refer [lefts left right]]
             [chassis.domains.session :as s]))
 
+(def SALE "SALE")
 (def PAYMENT "PAYMENT")
 (def REFUND  "REFUND")
 (def VOID    "VOID")
 
-(def types #{PAYMENT REFUND VOID})
+(def types #{SALE REFUND VOID})
 
-(defrecord Order [id, type, items, uuid, amount, billable, created-at, session-id, payment-method, payment-entity, payment-method-authorization, currency])
+(defrecord Order [id, type, items, uuid, amount, created-at, session-id, payment-method, payment-entity, payment-method-authorization, currency])
 
 (defn build [{session-id :id } {uuid :uuid
                                 amount :amount
@@ -29,7 +30,7 @@
                :billable   (or billable amount)
                :cost       (or cost 0)
                :items      items
-               :type       PAYMENT
+               :type       SALE
                :session-id session-id
                :amount     amount
                :payment-method-authorization payment-method-authorization
@@ -37,50 +38,45 @@
                :currency   currency
                :payment-method payment-method}))
 
-(defn billable [^Order order] (:billable order))
-(defn customer-id [^Order order] (:customer-id (:session order)))
-(defn amount [^Order order] (:amount order))
-(defn session-id [^Order order] (:session-id order))
-(defn uuid [^Order order] (:uuid order))
-(defn id [^Order order] (:id order))
-(defn items [^Order order] (:items order))
-(defn type [^Order order] (:type order))
-
 (defn db->kebab-order [data]
   (map->Order (transform-keys ->kebab-case-keyword data)))
+
+
+(defn failure-validation [msg]
+  (failure msg "VALIDATION"))
 
 (defn has-session? [{session-id :session-id :as order}]
   (if-not (nil? session-id)
     (right order)
-    (left (failure "validation.order.session.required"))))
+    (left (failure "VALIDATION" "validation.order.session.required"))))
 
 (defn has-uuid? [{uuid :uuid :as order}]
   (if-not (nil? uuid)
     (right order)
-    (left (failure "validation.order.uuid.required"))))
+    (left (failure-validation "validation.order.uuid.required"))))
 
 (defn has-amount? [{amount :amount :as order}]
   (if-not (nil? amount)
     (right order)
-    (left (failure "validation.order.amount.required"))))
+    (left (failure-validation "validation.order.amount.required"))))
 
 (defn items-total-match-with-amount? [{amount :amount items :items :as order}]
   (let [equals? (= amount
                    (reduce (fn [total item] (+ total (:total item))) 0 items))]
     (if equals?
       (right order)
-      (left (failure "validation.order.items.mismatch-total")))))
+      (left (failure-validation "validation.order.items.mismatch-total")))))
 
 (defmulti valid? (fn [{type :type}] (keyword (clojure.string/lower-case type))))
 
-(defmethod valid? :payment [^Order order]
+(defmethod valid? :sale [^Order order]
   (let [errors (concat-failures [(has-session? order)
                                  (has-uuid? order)
                                  (has-amount? order)
                                  (items-total-match-with-amount? order)])]
     (if (empty? errors)
       (right order)
-      (left errors))))
+      (left (failure errors)))))
 
 
 (defmethod valid? :default [o] (throw (Exception. (str "Invalid valid? call " (type o)))))

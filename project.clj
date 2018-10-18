@@ -38,6 +38,8 @@
                  [camel-snake-kebab "0.4.0"]
 
 
+                 [metosin/muuntaja-cheshire "0.6.1"]
+
                  ;; monads
                  [funcool/cats "2.2.0"]
                  [org.clojure/core.match "0.3.0-alpha5"]

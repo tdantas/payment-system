@@ -1,22 +1,17 @@
 (ns chassis.failure
-  (:require [cheshire.generate :as protocol]
-            [cats.monad.exception :as mexception]
+  (:require [cats.monad.exception :as mexception]
             [cats.monad.either :refer [lefts left right]]
             [clojure.core.match :as pattern]))
 
-(defrecord Failure [msg  ^Throwable exception])
-
-(protocol/add-encoder Failure (fn [f jg]
-                                (cheshire.generate/write-string jg
-                                                                {:type "failure"
-                                                                 :msg (:msg f)})))
+(defrecord Failure [msg code ^Throwable exception])
 
 (defn exception
   ([^Throwable e] (exception e (.getMessage e)))
-  ([^Throwable e msg] (map->Failure {:exception e :msg msg})))
+  ([^Throwable e msg] (map->Failure {:exception e :msg msg :code "INTERNAL_ERROR"})))
 
-(defn failure [msg]
-  (map->Failure {:msg msg}))
+(defn failure
+  ([msg] (map->Failure {:msg msg}))
+  ([msg code] (map->Failure {:msg msg :code code})))
 
 (defn append [error msg]
   (let [e-msg (:msg error)]

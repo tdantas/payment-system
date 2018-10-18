@@ -125,3 +125,4 @@
 
 (merge-with (fn [x y] (println x y) {:a 1} {:a 2}))
 ;(repo-mov/insert-credit {:gateway-id "3123123" :amount "3232" :transaction-id 1 :status "SETTLED"})
+
