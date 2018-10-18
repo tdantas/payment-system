@@ -1,17 +1,12 @@
 CREATE TABLE IF NOT EXISTS transactions (
    id             bigserial primary key,
-
-   amount         decimal,
-   billable       decimal,
-   cost           decimal,
-   payment_method varchar,
-   type           varchar,
-   payment_entity varchar,
    uuid           varchar,
 
-   items            jsonb,
-   gateway_response jsonb default '{}'::jsonb,
+   amount         decimal,
+   type           varchar,
+   gateway_id     varchar,
+   response       jsonb default '{}'::jsonb,
+   order_id      integer references orders not null,
 
    status         varchar,
-   session_id        integer references payment_sessions not null,
    created_at     timestamp default now());

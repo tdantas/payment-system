@@ -26,10 +26,9 @@
     (routes
       (POST "/payment-sessions" []
         :body [body ::session-request]
-        :middleware [(mw/register-intent "session.create")]
-        (-> (m-identity/identity body)
-            (m-core/bind ps/create)
-            http/translate))
+        :middleware [(mw/register-intent "SESSION")]
+        (http/translate (ps/create body)))
+
 
       (GET "/payment-sessions/:psid" request
         :middleware [mw/load-payment-session]

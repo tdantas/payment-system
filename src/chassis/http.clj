@@ -1,6 +1,7 @@
 (ns chassis.http
   (:require [clojure.core.match :as pattern]
             [chassis.config :refer [config]]
+            [clojure.stacktrace :as st]
             [ring.util.http-response :as resp]))
 
 (defn msg [code message]
@@ -8,7 +9,7 @@
 
 (defn internal-server-error [e]
   (condp (:env config) =
-    "development" (resp/internal-server-error e)
+    "development" (do (st/print-stack-trace e) (resp/internal-server-error e))
     (resp/internal-server-error (msg "INTERNAL_SERVER_ERROR" "Internal Server Error"))))
 
 (defn translate [m]

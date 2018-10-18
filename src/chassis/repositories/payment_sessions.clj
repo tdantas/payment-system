@@ -9,7 +9,7 @@
 (defn db->payment-session [db-ps]
   (transform-keys ->kebab-case-keyword db-ps))
 
-(defn create [{:keys [customer-id correlation client expiration-date]}]
+(defn insert [{:keys [customer-id correlation client expiration-date]}]
   (insert-payment-session  {:datasource db/datasource}
                            {:customer-id customer-id
                             :client client

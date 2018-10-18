@@ -25,9 +25,9 @@
                     :required    true
                     :default     "jdbc:postgresql://localhost:5432/payment_system_dev"}
 
-     :braintree {:nested { :merchant-id {:type :string :default "rqkh7jrypryrn8gy"}
-                           :private-key {:type :string :default "b85de79aaf466933c6266369f63fa290"}
-                           :public-key  {:type :string :default "drb8xdzsq9qzntxk"}
+     :braintree {:nested { :merchant-id {:secret true :type :string :default "rqkh7jrypryrn8gy"}
+                           :private-key {:secret true :type :string :default "b85de79aaf466933c6266369f63fa290"}
+                           :public-key  {:secret true :type :string :default "drb8xdzsq9qzntxk"}
                            :environment {:type :string :default "sandbox"}}}})
 
 
