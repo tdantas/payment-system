@@ -8,24 +8,25 @@
 
 (defrecord HttpFailure [code msg])
 
-(defn failure->http [{code :code msg :msg}]
-  (let [code (or code "ERROR")]
+(defn failure->http [{code :code msg :msg :as t}]
+  (let [code (or code  t "ERROR")]
     (if (coll? msg)
       (map->HttpFailure {:code code :msg (map failure->http msg)})
       (map->HttpFailure {:code code :msg msg}))))
 
-(defn internal-server-error [e]
-  (condp (:env config) =
-    "development" (do (st/print-stack-trace e) (resp/internal-server-error e))
-    (resp/internal-server-error (failure->http (exception e)))))
+(defn exception-or-unprocessable-entity [{e :exception  msg :msg code :code}]
+  (if e
+    (resp/internal-server-error (failure->http {:code "INTERNAL_SERVER_ERROR", :msg (.getMessage e)}))
+    (resp/unprocessable-entity  (failure->http {:msg msg :code code}))))
+
 
 (defn translate [m]
   (pattern/match m
-    {:e e}             (internal-server-error e)
+    {:e e}             (resp/internal-server-error e)
     {:v v}             (resp/ok v)
 
     {:just j}          (resp/ok j)
     {:nothing _}       (resp/not-found)
 
-    {:left f}          (resp/unprocessable-entity (failure->http  f))
+    {:left f}          (exception-or-unprocessable-entity f)
     {:right r}         (resp/ok r)))

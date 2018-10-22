@@ -3,9 +3,9 @@ create table if not exists movements (
   order_id                integer references orders,
 
   amount                  decimal,
-  type                    varchar, -- credit | debit | authorization
-  status                  varchar, -- refunded | cancelled | charged | settled
+  type                    varchar, -- CREDIT     | DEBIT
+  status                  varchar, -- PROCESSING | SUCCEED | FAILED
+  description             varchar,
 
-  movement_parent_id      integer references movements,
   created_at              timestamp default now()
 );

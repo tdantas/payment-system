@@ -1,4 +1,4 @@
-(ns chassis.services.transaction-refund
+(ns chassis.services.refund
   (:require [chassis.repositories.transactions :as repo-tx]
             [chassis.repositories.movements :as repo-mov]
 

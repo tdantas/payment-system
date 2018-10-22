@@ -9,7 +9,7 @@
 
             [chassis.http :as http]
 
-            [chassis.services.transaction-refund :as tx-refund]
+            [chassis.services.refund :as tx-refund]
             [chassis.services.sale :as tx-sale]
 
             [cats.core :refer [bind mlet]]

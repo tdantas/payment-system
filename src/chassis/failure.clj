@@ -1,7 +1,8 @@
 (ns chassis.failure
   (:require [cats.monad.exception :as mexception]
             [cats.monad.either :refer [lefts left right]]
-            [clojure.core.match :as pattern]))
+            [clojure.core.match :as pattern]
+            [clojure.stacktrace :as st]))
 
 (defrecord Failure [msg code ^Throwable exception])
 
@@ -19,12 +20,16 @@
       (conj e-msg msg)
       (vector e-msg msg))))
 
+(defn capture-stack-trace [e]
+  (with-out-str
+    (st/print-stack-trace e)))
+
 (defmacro wrap-try [msg & body]
   `(try
-     (right ~@body)
+     (right (do ~@body))
      (catch Exception e#
        (do (clojure.stacktrace/print-stack-trace e#)
-           (mexception/failure (exception e# ~msg))))))
+           (left (exception e# ~msg))))))
 
 (defn extract-failure [m]
   (pattern/match m
