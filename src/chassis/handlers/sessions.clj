@@ -1,4 +1,4 @@
-(ns chassis.handlers.payment-sessions
+(ns chassis.handlers.sessions
   (:require [compojure.api.sweet :refer [routes context GET POST resource]]
             [ring.util.http-response :refer [precondition-failed ok not-found]]
             [clojure.spec.alpha :as s]
@@ -17,20 +17,23 @@
 
 (s/def ::expiration-date spec/inst?)
 (s/def ::email spec/string?)
+(s/def ::currency #{"EUR"})
+
 (s/def ::client (s/keys :req-un [::email]))
 
 (s/def ::correlation spec/string?)
-(s/def ::session-request (s/keys :opt-un [::correlation ::expiration-date ::client]))
-
+(s/def ::session-request (s/keys
+                           :req-un [::currency]
+                           :opt-un [::correlation ::expiration-date ::client]))
 (def app
     (routes
-      (POST "/payment-sessions" []
+      (POST "/sessions" []
         :body [body ::session-request]
         :middleware [(mw/register-intent "SESSION")]
         (http/translate (ps/create body)))
 
 
-      (GET "/payment-sessions/:psid" request
+      (GET "/sessions/:psid" request
         :middleware [mw/load-payment-session]
         :path-params [psid :- spec/int?]
         (ok (get-in request [:app :session])))))

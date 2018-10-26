@@ -26,3 +26,6 @@
   ([id params]    (update {:datasource db/datasource} id params))
   ([db id params] (db->transactions (update-sale-tx db (merge params {:id id})))))
 
+(defn find-by-session
+  ([session-id] (find-by-session {:datasource db/datasource} session-id))
+  ([db session-id] (find-txs-by-session-id db {:session-id session-id})))

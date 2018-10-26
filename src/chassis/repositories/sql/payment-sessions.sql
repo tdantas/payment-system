@@ -4,3 +4,4 @@ insert into payment_sessions (customer_id, correlation, client, expiration_date)
 -- :name- find-unique :? :1
 select * from payment_sessions
 where id = :id::integer
+

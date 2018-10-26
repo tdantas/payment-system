@@ -25,12 +25,13 @@
                                 items :items
                                 currency :currency
                                 payment-method-authorization  :payment-method-authorization
-                                payment-entity :payment-entity}]
+                                payment-entity :payment-entity
+                                type :type}]
   (map->Order {:uuid       uuid
                :billable   (or billable amount)
                :cost       (or cost 0)
                :items      items
-               :type       SALE
+               :type       (or type SALE)
                :session-id session-id
                :amount     amount
                :payment-method-authorization payment-method-authorization

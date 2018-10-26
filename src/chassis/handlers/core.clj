@@ -1,6 +1,6 @@
 (ns chassis.handlers.core
   (:require [compojure.api.sweet :refer [context]]
-            [chassis.handlers.payment-sessions :as payment-sessions]
+            [chassis.handlers.sessions :as payment-sessions]
             [chassis.handlers.movements :as movements]
             [chassis.handlers.audits :as audits]
             [chassis.handlers.orders :as transactions]))

@@ -48,8 +48,12 @@
         (bind (partial tx-sale/sale session))
         (http/translate))))
 
-(defn refund-handler [uuid session tx-refund]
-  (http/translate (tx-refund/refund uuid session tx-refund)))
+(defn refund-handler [uuid session web-params]
+  (let [order (o/build session (assoc web-params :uuid uuid))]
+   (-> (o/save order)
+       (bind (partial tx-refund/refund session))
+
+     (http/translate))))
 
 (def app
   (context "/sessions/:psid" []
@@ -58,7 +62,7 @@
     :path-params [psid :- spec/int?]
     :middleware [mw/load-payment-session]
 
-    (POST "/payment" {{:keys [uuid session]} :app :as r}
+    (POST "/sale" {{:keys [uuid session]} :app :as r}
       :body [body ::sale-order]
       :middleware [(mw/register-intent "PAYMENT")]
       (payment-handler uuid session body))

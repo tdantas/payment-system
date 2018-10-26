@@ -16,8 +16,8 @@
             [clojure.tools.logging :as log]
             [braintree-clj.transaction-request :as bt-tr]
             [cats.monad.either :as m-either]
+            [chassis.failure :refer [failure exception]]
             [clojure.stacktrace :as st]))
-
 
 (defn payment-entity->merchant [payment-entity]
   "runtime")
@@ -71,4 +71,18 @@
     (bt-tx-sale params)
     (catch Exception e
       (m-either/left {:stacktrace (capture-stack-trace e)}))))
+
+(defn tx-void [{tx-id :gateway-id :as tx}]
+  (let [result (braintree/tx-void tx-id)]
+    (if (bt-r/success? result)
+      (m-either/right (bt-r/target result))
+      (m-either/left {:error (bt-r/message result)}))))
+
+(defn tx-refund [{id :id amount :refund-balance :as tx}]
+  (let [result (braintree/tx-refund id amount)]
+    (if (bt-r/success? result)
+      (m-either/right (bt-r/target result))
+      (m-either/left {:error (bt-r/message result)}))))
+
+
 

@@ -12,7 +12,7 @@ CREATE TABLE IF NOT EXISTS orders (
 
    type           varchar,
    items          jsonb,
-   currency       varchar,
 
+   status         varchar, -- FULLFILED | FAILED
    session_id    integer references payment_sessions not null,
    created_at    timestamp default now());
