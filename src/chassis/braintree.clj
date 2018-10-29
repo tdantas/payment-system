@@ -75,13 +75,13 @@
 (defn tx-void [{tx-id :gateway-id :as tx}]
   (let [result (braintree/tx-void tx-id)]
     (if (bt-r/success? result)
-      (m-either/right (bt-r/target result))
+      (m-either/right (bt-tx/to-map (bt-r/target result)))
       (m-either/left {:error (bt-r/message result)}))))
 
-(defn tx-refund [{id :id amount :refund-balance :as tx}]
+(defn tx-refund [{id :id amount :amount :as tx}]
   (let [result (braintree/tx-refund id amount)]
     (if (bt-r/success? result)
-      (m-either/right (bt-r/target result))
+      (m-either/right (bt-tx/to-map (bt-r/target result)))
       (m-either/left {:error (bt-r/message result)}))))
 
 

@@ -49,10 +49,9 @@
         (http/translate))))
 
 (defn refund-handler [uuid session web-params]
-  (let [order (o/build session (assoc web-params :uuid uuid))]
+  (let [order (o/build session (assoc web-params :uuid uuid :type o/REFUND))]
    (-> (o/save order)
        (bind (partial tx-refund/refund session))
-
      (http/translate))))
 
 (def app

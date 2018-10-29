@@ -36,7 +36,6 @@
   (wrap-try "transaction.save.failed"
             (snake->Transaction (rtx/insert transaction))))
 
-
 (defn find-genesis [txs-map id]
   (loop [id-tx id]
     (let [tx (get txs-map id-tx)
@@ -96,7 +95,6 @@
 
 (defn sort-by-status [txs]
   (sort-by sort-fn (fn [[a1 a2] [b1 b2]]
-                     (println a1 b1 a2 b2)
                      (if (= a1 b1)
                        (compare b2 a2)
                        (compare a1 b1)))  txs))
@@ -108,16 +106,18 @@
    (let [balance (:available-balance h)]
       (cond
         (nil? h) (left (failure "transactions.eligibles.not-found.refund"))
-        (> (- amount balance) 0) (recur (- amount balance) t (conj result (assoc h :refund-balance balance)))
+        (pos? (- amount balance)) (recur (- amount balance) t (conj result (assoc h :refund-balance balance)))
         :else (right (conj result (assoc h :refund-balance amount)))))))
 
-
-(defmulti compensation-commands (fn [amount {status :status refund-balance :refund-balance :as tx}]
+(defmulti compensation-commands (fn [amount {status :status
+                                             available-balance :available-balance
+                                             refund-balance :refund-balance
+                                             :as tx}]
                                   (let [status (keyword status)
-                                        balance (- amount refund-balance)]
+                                        balance (- amount available-balance)]
                                     (cond
-                                      (or (pos? balance) (zero? balance))  [status :total]
-                                      (neg? balance)  [status :partial]))))
+                                      (= refund-balance available-balance)  [status :total]
+                                       :else                                [status :partial]))))
 
 (defmethod compensation-commands [:AUTHORIZED :total] [amount tx]
   [{:command :void :tx tx :amount (:refund-balance tx)}])
@@ -126,18 +126,18 @@
   [{:command :void :tx tx :amount (:refund-balance tx)}])
 
 (defmethod compensation-commands [:AUTHORIZED :partial] [amount tx]
-  [{:command :void :tx tx :amount (:refund-balance tx)}
-   {:command :sale :tx tx :amount (- (:refund-balance tx))}])
+  [{:command :void :tx tx :amount (:amount tx)}
+   {:command :sale :tx tx :amount (- (:available-balance tx) (:refund-balance tx))}])
 
 (defmethod compensation-commands [:SUBMITTED_FOR_SETTLEMENT :partial] [amount tx]
-  [{:command :void :tx tx :amount (:refund-balance tx)}
-   {:command :sale :tx tx :amount (:refund-balance tx)}])
+  [{:command :void :tx tx :amount (:amount tx)}
+   {:command :sale :tx tx :amount (- (:available-balance tx) (:refund-balance tx))}])
 
 (defmethod compensation-commands [:SETTLED :total] [amount tx]
   [{:command :refund :tx tx :amount (:refund-balance tx)}])
 
 (defmethod compensation-commands [:SETTLED :partial] [amount tx]
-  [{:command :refund :tx tx :amount amount}])
+  [{:command :refund :tx tx :amount (:refund-balance tx)}])
 
 (defmethod compensation-commands :default [amount tx]
   (throw (Exception. "METHOD DISPATCH ERROR COMPENSATION COMMANDS REFUND")))
@@ -150,6 +150,7 @@
     (assoc acc :commands commands :amount new-amount)))
 
 (defn generate-commands [refund-amount eligible-txs]
+  (println eligible-txs)
   (right (reduce command-reducer {:amount refund-amount :commands []} eligible-txs)))
 
 
