@@ -1,6 +1,6 @@
 -- :name- insert-movement :insert :raw
-insert into movements (order_id, amount, type, status, tx_id)
-       values(:order-id::integer, :amount::integer, :type, :status, :tx-id)
+insert into movements (order_id, amount, type, tx_id)
+       values(:order-id::integer, :amount::integer, :type, :tx-id)
 
 -- :name movements-by-session :? :*
 select m.* from payment_sessions ps

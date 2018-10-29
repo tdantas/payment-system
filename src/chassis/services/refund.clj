@@ -5,8 +5,9 @@
             [chassis.braintree :as bt]
             [chassis.failure :refer [failure]]
             [clojure.tools.logging :as log]
-            [cats.monad.either :refer [right left either lefts]]
-            [cats.core :refer [mlet bind fmap extract]]))
+            [cats.monad.either :refer [right left either lefts branch-right]]
+            [cats.core :refer [mlet bind fmap extract]]
+            [chassis.domains.movement :as m]))
 
 (defn mark-tx-as-error [type parent-id order amount response]
   (log/info "marking transaction as FAILED")
@@ -72,11 +73,30 @@
 
 (defn fmapl [fv f] (fmap f fv))
 
-(defn generate-movements [transactions]
-  (let [failures (lefts transactions)]
-    (if (empty? failures)
-      (right (map extract transactions))
-      (left (failure "refund.failed"))))) ;; failure need to receive some data ( failures for instance)
+(defmulti build-movement (fn [{type :type}] (keyword (clojure.string/lower-case type))))
+
+(defmethod build-movement :void [{order-id :order-id amount :amount tx-id :id}]
+  (m/build-debit {:order-id order-id
+                  :tx-id    tx-id
+                  :amount   amount}))
+
+(defmethod build-movement :refund [{order-id :order-id amount :amount tx-id :id}]
+  (m/build-debit {:order-id order-id
+                  :tx-id    tx-id
+                  :amount   amount}))
+
+(defmethod build-movement :sale [{order-id :order-id amount :amount tx-id :id}]
+  (m/build-credit {:order-id order-id
+                   :tx-id    tx-id
+                   :amount   amount}))
+
+(defn generate-movement [tx]
+  (log/info "creating movement" tx)
+  (m/save (build-movement tx)))
+
+(defn generate-movements [order transactions]
+  (log/info "starting movement generation for successfuly transactions")
+  (right (map #(branch-right % generate-movement) transactions)))
 
 (defn refund [session order]
   (log/info "initiating refund")
@@ -86,6 +106,5 @@
          (bind (partial t/eligible-for-refund refund-amount))
          (bind (partial t/generate-commands refund-amount))
          (fmapl :commands)
-         (bind (partial bt-refund-txs order session)))))
-
-
+         (bind (partial bt-refund-txs order session))
+         (bind (partial generate-movements order)))))

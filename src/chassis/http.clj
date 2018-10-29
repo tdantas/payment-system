@@ -29,4 +29,5 @@
     {:nothing _}       (resp/not-found)
 
     {:left f}          (exception-or-unprocessable-entity f)
-    {:right r}         (resp/ok r)))
+    {:right r}         (resp/ok r)
+    {:seq s}           (resp/ok s)))

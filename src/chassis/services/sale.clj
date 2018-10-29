@@ -39,14 +39,12 @@
 
 (defn generate-movement [{amount :amount
                           order-id :order-id
-                          status :status
                           id :id
                           :as tx}]
 
   (log/info "creating credit movement")
   (m/save (m/build-credit  {:order-id order-id
                             :tx-id id
-                            :status status
                             :amount amount})))
 
 (defn create-tx-and-movement [order bt]

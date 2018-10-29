@@ -8,18 +8,21 @@
             [chassis.failure :refer [wrap-try failure exception]]
             [cats.monad.either :refer [left right]]))
 
-(defrecord Movement [id, order-id, amount, type, status, tx-id])
+(defrecord Movement [id, order-id, amount, type, tx-id])
 
-(defn build [{:keys [tx-id order-id amount type status]}]
+(defn build [{:keys [tx-id order-id amount type]}]
   {:pre  [(some? amount) (some? type) (some? type) (some? order-id)]}
   (map->Movement {:order-id order-id
                   :amount amount
                   :tx-id tx-id
-                  :type type
-                  :status status}))
+                  :type type}))
 
-(defn build-credit [{:keys [tx-id order-id amount status] :as params}]
-  {:pre  [(some? amount) (some? type)  (some? order-id)]}
+(defn build-debit [{:keys [tx-id order-id amount] :as params}]
+  {:pre  [(some? amount) (some? order-id)]}
+  (build (assoc params :type "DEBIT")))
+
+(defn build-credit [{:keys [tx-id order-id amount] :as params}]
+  {:pre  [(some? amount) (some? order-id)]}
   (build (assoc params :type "CREDIT")))
 
 (defn- snake->Movement [db-order]
