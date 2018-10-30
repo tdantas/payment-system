@@ -22,7 +22,6 @@
                      :response response}))
   (left (failure "payment.gateway.failed")))
 
-
 (defn mark-tx-as-success [type parent-id  order amount response]
   (log/info "marking transaction as SUCCESS")
   (t/save (t/build  {:uuid       (:uuid order)
@@ -101,10 +100,6 @@
        (right movements)
        (left (failure "refund.transaction.failed")))))
 
-(defn testing [order txs]
-  (log/info txs)
-  (right txs))
-
 (defn refund [session order]
   (log/info "initiating refund")
   (let [refund-amount (:amount order)]
@@ -114,5 +109,4 @@
          (bind (partial t/generate-commands refund-amount))
          (fmapl :commands)
          (bind (partial bt-refund-txs order session))
-         (bind (partial testing order))
          (bind (partial generate-movements order)))))

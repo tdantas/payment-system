@@ -39,7 +39,7 @@
 (s/def ::sale-order (s/keys :req-un [::amount ::items ::payment-method ::payment-entity ::currency]
                             :opt-un [::payment-method-authorization]))
 
-(s/def ::refund-order (s/keys :req-un [::amount]))
+(s/def ::refund-order (s/keys :req-un [::amount ::payment-entity]))
 
 (defn mark-order-as-failed [order failure]
   (log/info "marking order [" (:id order) "] as failed")

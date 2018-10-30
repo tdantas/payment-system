@@ -12,5 +12,5 @@ where id = :id returning *
 select t.* from payment_sessions ps
 join orders o on ps.id = o.session_id
 join transactions t on t.order_id = o.id
-where ps.id = :session-id
-order by COALESCE(t.tx_parent_id, t.id), id;
+where ps.id = :session-id and t.status <> 'FAILED'
+order by COALESCE(t.tx_parent_id, t.id), id
