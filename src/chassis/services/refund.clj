@@ -69,7 +69,7 @@
   (future (command-executor order session command)))
 
 (defn bt-refund-txs [order session txs]
-  (right (map (comp deref (partial refund-tx order session)) txs)))
+  (right (doall (map (comp deref (partial refund-tx order session)) txs))))
 
 (defn fmapl [fv f] (fmap f fv))
 
@@ -96,7 +96,14 @@
 
 (defn generate-movements [order transactions]
   (log/info "starting movement generation for successfuly transactions")
-  (right (map #(branch-right % generate-movement) transactions)))
+  (let [movements (doall (map #(branch-right % generate-movement) transactions))]
+    (if (empty? (lefts movements))
+       (right movements)
+       (left (failure "refund.transaction.failed")))))
+
+(defn testing [order txs]
+  (log/info txs)
+  (right txs))
 
 (defn refund [session order]
   (log/info "initiating refund")
@@ -107,4 +114,5 @@
          (bind (partial t/generate-commands refund-amount))
          (fmapl :commands)
          (bind (partial bt-refund-txs order session))
+         (bind (partial testing order))
          (bind (partial generate-movements order)))))

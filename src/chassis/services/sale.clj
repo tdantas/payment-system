@@ -52,13 +52,13 @@
       (bind generate-movement)))
 
 (defn sale [session order]
-  (log/info "initiating sale for order" (:id order) "session" (:id session))
+  (log/info "initiating sale for order")
   (-> (bt/tx-sale {:customer-id (:customer-id session)
                    :amount      (:amount order)
                    :correlation (:correlation session)
                    :payment-method-authorization (:payment-method-authorization order)
                    :payment-entity (:payment-entity order)})
 
-     (either (partial mark-tx-as-error  order)
+     (either (partial mark-tx-as-error order)
              (partial create-tx-and-movement order))))
 

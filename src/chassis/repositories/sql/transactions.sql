@@ -1,6 +1,6 @@
 -- :name- insert-sale-tx :insert :raw
-insert into transactions (order_id, amount, status, response, uuid, type, gateway_id, final_state, provider, tx_parent_id)
-       values(:order-id::integer, :amount, :status, :response, :uuid, :type, :gateway-id, :final-state, :provider, :tx-parent-id)
+insert into transactions (order_id, amount, status, response, uuid, type, gateway_id, final_state, provider, tx_parent_id, created_at)
+       values(:order-id::integer, :amount, :status, :response, :uuid, :type, :gateway-id, :final-state, :provider, :tx-parent-id, now())
 
 -- :name- update-sale-tx :<! :1
 update transactions

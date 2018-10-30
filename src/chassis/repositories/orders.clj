@@ -6,5 +6,12 @@
 
 (hugsql/def-db-fns "chassis/repositories/sql/orders.sql")
 
-(defn insert [order]
-  (insert-order {:datasource db/datasource} order))
+(defn insert-sale [order]
+    (insert-sale-order {:datasource db/datasource} order))
+
+(defn update [order params]
+  (update-order {:datasource db/datasource}
+          (merge {:id (:id order)} params)))
+
+(defn insert-refund [order]
+  (insert-refund-order {:datasource db/datasource} order))

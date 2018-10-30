@@ -2,7 +2,8 @@
   (:require [cats.monad.exception :as mexception]
             [cats.monad.either :refer [lefts left right]]
             [clojure.core.match :as pattern]
-            [clojure.stacktrace :as st]))
+            [clojure.stacktrace :as st]
+            [clojure.tools.logging :as log]))
 
 (defrecord Failure [msg code ^Throwable exception])
 
@@ -10,9 +11,13 @@
   ([^Throwable e] (exception e (.getMessage e)))
   ([^Throwable e msg] (map->Failure {:exception e :msg msg :code "INTERNAL_ERROR"})))
 
+
 (defn failure
   ([msg] (map->Failure {:msg msg}))
   ([msg code] (map->Failure {:msg msg :code code})))
+
+(defn validation-failure [msg]
+  (failure msg "VALIDATION"))
 
 (defn append [error msg]
   (let [e-msg (:msg error)]
@@ -28,7 +33,9 @@
   `(try
      (right (do ~@body))
      (catch Exception e#
-       (do (clojure.stacktrace/print-stack-trace e#)
+       (do
+           (log/info (.getMessage e#))
+           (clojure.stacktrace/print-stack-trace e#)
            (left (exception e# ~msg))))))
 
 (defn extract-failure [m]

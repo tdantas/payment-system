@@ -1,5 +1,6 @@
 (ns chassis.monads
-  (:require [cats.core :refer [fmap]]))
+  (:require [cats.builtin]
+            [cats.core :refer [fmap extract]]))
 
 
 (defn tee [f]
