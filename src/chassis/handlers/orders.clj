@@ -42,7 +42,7 @@
 (s/def ::refund-order (s/keys :req-un [::amount ::payment-entity]))
 
 (defn mark-order-as-failed [order failure]
-  (log/info "marking order [" (:id order) "] as failed")
+  (log/info "marking order [" (:id order) "] as failed ->" failure)
   (orders/mark-as-failed order)
   (left failure))
 
@@ -54,7 +54,6 @@
   (let [order (orders/build (assoc web-params :type type))]
     (mlet [order (orders/valid? order)
            order (orders/save order)]
-
      (either (f order)
              (partial mark-order-as-failed order)
              (partial mark-order-fullfiled order)))))
@@ -76,10 +75,10 @@
 
     (POST "/sale" {{:keys [uuid session]} :app :as r}
       :body [body ::sale-order]
-      :middleware [(mw/register-intent "PAYMENT")]
+      :middleware [(mw/request-log "PAYMENT")]
       (sale-handler session (assoc body :uuid uuid :session-id (:id session))))
 
     (POST "/refund" {{:keys [uuid session]} :app}
       :body [body ::refund-order]
-      :middleware [(mw/register-intent "REFUND")]
+      :middleware [(mw/request-log "REFUND")]
       (refund-handler session (assoc body :uuid uuid :session-id (:id session))))))

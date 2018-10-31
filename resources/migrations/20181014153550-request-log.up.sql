@@ -6,5 +6,6 @@ CREATE TABLE IF NOT EXISTS request_log (
    method      varchar,
    payload     jsonb,
    response    jsonb,
+   status      varchar,
    uuid        varchar,
    created_at  timestamp default now());
