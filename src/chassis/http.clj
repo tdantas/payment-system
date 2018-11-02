@@ -2,32 +2,27 @@
   (:require [clojure.core.match :as pattern]
             [chassis.config :refer [config]]
             [clojure.stacktrace :as st]
-            [chassis.failure :refer [exception]]
             [ring.util.http-response :as resp]))
 
+(defmulti dto type)
+(defmethod dto :default [v] v)
 
-(defrecord HttpFailure [code msg])
-
-(defn failure->http [{code :code msg :msg :as t}]
-  (let [code (or code  t "ERROR")]
-    (if (coll? msg)
-      (map->HttpFailure {:code code :msg (map failure->http msg)})
-      (map->HttpFailure {:code code :msg msg}))))
-
-(defn exception-or-unprocessable-entity [{e :exception  msg :msg code :code}]
-  (if e
-    (resp/internal-server-error (failure->http {:code "INTERNAL_SERVER_ERROR", :msg (.getMessage e)}))
-    (resp/unprocessable-entity  (failure->http {:msg msg :code code}))))
-
+(defn type->dto [f v]
+  (let [dto-value (dto v)
+        response (f dto-value)]
+    (if (map? dto-value)
+      (merge response {:status (or (:http-status-code dto-value) (:status response))})
+      response)))
 
 (defn translate [m]
   (pattern/match m
-    {:e e}             (resp/internal-server-error e)
-    {:v v}             (resp/ok v)
+    {:e e}             (type->dto resp/internal-server-error e)
+    {:v v}             (type->dto identity v)
 
-    {:just j}          (resp/ok j)
-    {:nothing _}       (resp/not-found)
+    {:just j}          (type->dto resp/ok j)
+    {:nothing _}       (type->dto resp/not-found {})
 
-    {:left f}          (exception-or-unprocessable-entity f)
-    {:right r}         (resp/ok r)
-    {:seq s}           (resp/ok s)))
+    {:left f}          (type->dto resp/precondition-failed f)
+    {:right r}         (type->dto resp/ok r)
+
+    {:seq s}           (type->dto resp/ok s)))

@@ -43,8 +43,8 @@
    (let [customer-result (bt-cg/create gateway (customer-request cr-params))
          customer (result/target customer-result)]
         (if (result/success? customer-result)
-          (bt-customer/to-map customer)
-          (throw (ex-info "cant create customer" {:errors (result/errors customer-result)}))))))
+          (m-either/right (bt-customer/to-map customer))
+          (m-either/left (ex-info "cant create customer" {:errors (result/errors customer-result)}))))))
 
 
 (defn- tx-request [{:keys [payment-method-nonce customer-id amount order-id merchant]}]

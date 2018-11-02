@@ -2,7 +2,8 @@
   (:require [chassis.repositories.orders :as repo-order]
             [camel-snake-kebab.core :refer [->kebab-case-keyword]]
             [camel-snake-kebab.extras :refer [transform-keys]]
-            [chassis.failure :refer [wrap-try failure exception concat-failures validation-failure]]
+            [chassis.failure :refer [wrap-try failure exception concat-failures validation-error]]
+            [chassis.http :refer [dto]]
             [cats.monad.either :refer [lefts left right]]
             [chassis.domains.session :as s]
             [chassis.domains.orders.protocol :refer [BaseOrder web->order]]))
@@ -16,6 +17,14 @@
   (-valid? [order] (valid? order))
   (-save [order] (save order))
   (-update [order params] (update order params)))
+
+
+(defmethod dto SaleOrder [order]
+  {:status (:status order)
+   :id (:id order)
+   :type (:type order)
+   :amount (:amount order)})
+
 
 (defn db->kebab-order [data]
   (map->SaleOrder (transform-keys ->kebab-case-keyword data)))
@@ -48,24 +57,24 @@
 (defn has-session? [{session-id :session-id :as order}]
   (if-not (nil? session-id)
     (right order)
-    (left (validation-failure "validation.order.session.required"))))
+    (left (failure "validation.order.session.required"))))
 
 (defn has-uuid? [{uuid :uuid :as order}]
   (if-not (nil? uuid)
     (right order)
-    (left (validation-failure "validation.order.uuid.required"))))
+    (left (failure "validation.order.uuid.required"))))
 
 (defn has-amount? [{amount :amount :as order}]
   (if-not (nil? amount)
     (right order)
-    (left (validation-failure "validation.order.amount.required"))))
+    (left (failure "validation.order.amount.required"))))
 
 (defn items-total-match-with-amount? [{amount :amount items :items :as order}]
   (let [equals? (= amount
                    (reduce (fn [total item] (+ total (:total item))) 0 items))]
     (if equals?
       (right order)
-      (left (validation-failure "validation.order.items.mismatch-total")))))
+      (left (failure "validation.order.items.mismatch-total")))))
 
 (defn valid? [^SaleOrder order]
   (let [errors (concat-failures [(has-session? order)
@@ -74,7 +83,7 @@
                                  (items-total-match-with-amount? order)])]
     (if (empty? errors)
       (right order)
-      (left (failure errors)))))
+      (left (validation-error "sale.validation.failed" errors)))))
 
 (defn save [^SaleOrder order]
   (wrap-try "sale.order.save.failed"

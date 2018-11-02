@@ -2,15 +2,23 @@
   (:require [clojure.core :as clj]
             [chassis.repositories.payment-sessions :as repo-session]
             [cats.core :refer [foldl return]]
+            [chassis.http :refer [dto]]
             [camel-snake-kebab.core :refer [->kebab-case-keyword]]
             [camel-snake-kebab.extras :refer [transform-keys]]
             [chassis.failure :refer [wrap-try failure exception]]
             [cats.monad.either :refer [left right]]))
 
-(defrecord Session [id, correlation, customer-id])
+(defrecord Session [id, correlation, customer-id, currency])
 
-(defn build [customer-id {:keys [correlation]}]
+(defmethod dto Session [session]
+  {:id (:id session)
+   :currency (:currency session)
+   :customer-id (:customer-id session)})
+
+(defn build [customer-id {:keys [correlation currency client]}]
   (map->Session {:correlation correlation
+                 :currency currency
+                 :client client
                  :customer-id customer-id}))
 
 (defn- snake->Session [db-order]

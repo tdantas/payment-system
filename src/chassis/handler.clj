@@ -24,5 +24,4 @@
 (def app
   (-> swagger-api
       mw/log-mdc
-      mw/uuid
-      (instrument-by uri-prefix)))
+      mw/uuid))

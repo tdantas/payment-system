@@ -46,8 +46,7 @@
 
 (defn save-into-txs-map [index acc key value]
   (let [genesis (find-genesis index key)
-        tx  (get index genesis)
-        tx-descendants (:descendants tx [])]
+        tx  (get index genesis)]
     (if (= key genesis)
       (assoc acc genesis tx)
       (assoc acc genesis
@@ -55,12 +54,11 @@
                            (conj (get-in acc [genesis :descendants] []) value))))))
 
 (defn index [txs]
-  (zipmap (map :id  txs) txs))
+  (into (sorted-map)(zipmap (map :id  txs) txs)))
 
 (defn build-descendants [txs]
   (let [idx-tx (index txs)]
-    (vals (reduce-kv(partial save-into-txs-map idx-tx) {} idx-tx))))
-
+    (vals (reduce-kv (partial save-into-txs-map idx-tx) {} idx-tx))))
 
 (defn real-amount [tx]
   (let [amount (:amount tx)]
@@ -83,7 +81,8 @@
   (conj acc (assoc tx :available-balance (calculate-balance tx))))
 
 (defn balance [txs]
-  (reduce  balance-reducer [] (build-descendants txs)))
+  (let [descandant (build-descendants txs)]
+    (reduce  balance-reducer [] descandant)))
 
 
 (defn positive-balance [txs]

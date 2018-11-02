@@ -9,11 +9,8 @@
 (defn db->payment-session [db-ps]
   (transform-keys ->kebab-case-keyword db-ps))
 
-(defn insert [{:keys [customer-id correlation client expiration-date]}]
-  (insert-payment-session  {:datasource db/datasource}
-                           {:customer-id customer-id
-                            :client client
-                            :expiration-date expiration-date
-                            :correlation correlation}))
+(defn insert [{:keys [customer-id correlation client expiration-date currency] :as session}]
+  (db->payment-session (insert-payment-session  {:datasource db/datasource} session)))
+
 (defn find-by-id [id]
   (db->payment-session (find-unique {:datasource db/datasource} {:id id})))

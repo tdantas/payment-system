@@ -5,5 +5,4 @@ create table if not exists payment_sessions (
    client        json,
    currency      varchar,
 
-   expiration_date timestamp,
    created_at timestamp default now());

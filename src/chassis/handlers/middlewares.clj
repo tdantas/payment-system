@@ -45,8 +45,8 @@
 (defn uuid [handler]
   (fn [request]
     (let [uuid (.toString (java.util.UUID/randomUUID))]
-      (some-> (handler (merge request {:app  {:uuid uuid}}))
-              (resp/header "x-request-id" uuid)))))
+      (-> (handler (merge request {:app  {:uuid uuid}}))
+          (resp/header "x-request-id" uuid)))))
 
 (defn log-mdc [handler]
   (fn [request]

@@ -28,4 +28,4 @@
 
 (defn find-by-session
   ([session-id] (find-by-session {:datasource db/datasource} session-id))
-  ([db session-id] (find-txs-by-session-id db {:session-id session-id})))
+  ([db session-id] (map db->transactions (find-txs-by-session-id db {:session-id session-id}))))
