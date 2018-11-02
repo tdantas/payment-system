@@ -2,7 +2,7 @@
   (:require [chassis.repositories.orders :as repo-order]
             [camel-snake-kebab.core :refer [->kebab-case-keyword]]
             [camel-snake-kebab.extras :refer [transform-keys]]
-            [chassis.http :refer [dto]]
+            [chassis.http :refer [WebDTO]]
             [chassis.failure :refer [wrap-try failure exception concat-failures validation-error]]
             [cats.monad.either :refer [lefts left right]]
             [chassis.domains.orders.protocol :refer [BaseOrder web->order]]))
@@ -11,20 +11,26 @@
 
 (def REFUND "REFUND")
 
-(defrecord RefundOrder [type, uuid, amount, created-at, session-id, payment-entity]
-  BaseOrder
-  (-valid? [order] (valid? order))
-  (-save [order] (save order))
-  (-update [order params] (update order params)))
-
-(defn db->kebab-order [data]
-  (map->RefundOrder (transform-keys ->kebab-case-keyword data)))
-
-(defmethod dto RefundOrder [order]
+(defn dto [order]
   {:status (:status order)
    :id (:id order)
    :type "REFUND"
    :amount (:amount order)})
+
+(defrecord RefundOrder [type, uuid, amount, created-at, session-id, payment-entity]
+  BaseOrder
+  (-valid? [order] (valid? order))
+  (-save [order] (save order))
+  (-update [order params] (update order params))
+
+  WebDTO
+  (-dto [order] (dto order)))
+
+
+(defn db->kebab-order [data]
+  (map->RefundOrder (transform-keys ->kebab-case-keyword data)))
+
+
 
 (defmethod web->order :refund [{session-id :session-id
                                 uuid       :uuid

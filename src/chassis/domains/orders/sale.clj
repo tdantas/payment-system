@@ -3,7 +3,7 @@
             [camel-snake-kebab.core :refer [->kebab-case-keyword]]
             [camel-snake-kebab.extras :refer [transform-keys]]
             [chassis.failure :refer [wrap-try failure exception concat-failures validation-error]]
-            [chassis.http :refer [dto]]
+            [chassis.http :refer [WebDTO]]
             [cats.monad.either :refer [lefts left right]]
             [chassis.domains.session :as s]
             [chassis.domains.orders.protocol :refer [BaseOrder web->order]]))
@@ -12,19 +12,20 @@
 
 (def SALE "SALE")
 
-(defrecord SaleOrder [id, type, items, uuid, amount, created-at, session-id, payment-method, payment-entity, payment-method-authorization, currency, status]
-  BaseOrder
-  (-valid? [order] (valid? order))
-  (-save [order] (save order))
-  (-update [order params] (update order params)))
-
-
-(defmethod dto SaleOrder [order]
+(defn dto [order]
   {:status (:status order)
    :id (:id order)
    :type (:type order)
    :amount (:amount order)})
 
+(defrecord SaleOrder [id, type, items, uuid, amount, created-at, session-id, payment-method, payment-entity, payment-method-authorization, currency, status]
+  BaseOrder
+  (-valid? [order] (valid? order))
+  (-save [order] (save order))
+  (-update [order params] (update order params))
+
+  WebDTO
+  (-dto [order] (dto order)))
 
 (defn db->kebab-order [data]
   (map->SaleOrder (transform-keys ->kebab-case-keyword data)))
@@ -57,24 +58,24 @@
 (defn has-session? [{session-id :session-id :as order}]
   (if-not (nil? session-id)
     (right order)
-    (left (failure "validation.order.session.required"))))
+    (left (failure "session.required"))))
 
 (defn has-uuid? [{uuid :uuid :as order}]
   (if-not (nil? uuid)
     (right order)
-    (left (failure "validation.order.uuid.required"))))
+    (left (failure "uuid.required"))))
 
 (defn has-amount? [{amount :amount :as order}]
   (if-not (nil? amount)
     (right order)
-    (left (failure "validation.order.amount.required"))))
+    (left (failure "amount.required"))))
 
 (defn items-total-match-with-amount? [{amount :amount items :items :as order}]
   (let [equals? (= amount
                    (reduce (fn [total item] (+ total (:total item))) 0 items))]
     (if equals?
       (right order)
-      (left (failure "validation.order.items.mismatch-total")))))
+      (left (failure "items.amount-mismatch")))))
 
 (defn valid? [^SaleOrder order]
   (let [errors (concat-failures [(has-session? order)

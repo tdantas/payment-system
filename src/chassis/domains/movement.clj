@@ -1,5 +1,6 @@
 (ns chassis.domains.movement
   (:require [clojure.core :as clj]
+            [chassis.http :refer [WebDTO]]
             [chassis.domains.transaction :as tx]
             [chassis.repositories.movements :as repo-movements]
             [cats.core :refer [foldl return]]
@@ -8,7 +9,12 @@
             [chassis.failure :refer [wrap-try failure exception]]
             [cats.monad.either :refer [left right]]))
 
-(defrecord Movement [id, order-id, amount, type, tx-id])
+(defn dto [{:keys [id order-id amount type]}]
+  {:id id :order-id order-id :amount amount :type type})
+
+(defrecord Movement [id, order-id, amount, type, tx-id]
+  WebDTO
+ (-dto [this] (dto this)))
 
 (defn build [{:keys [tx-id order-id amount type]}]
   {:pre  [(some? amount) (some? type) (some? type) (some? order-id)]}

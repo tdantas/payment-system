@@ -4,8 +4,15 @@
             [clojure.stacktrace :as st]
             [ring.util.http-response :as resp]))
 
-(defmulti dto type)
-(defmethod dto :default [v] v)
+(defprotocol WebDTO
+  (-dto [t]))
+
+(extend-type java.lang.Object
+  WebDTO
+  (-dto [t] t))
+
+(defn dto [obj]
+  (-dto obj))
 
 (defn type->dto [f v]
   (let [dto-value (dto v)

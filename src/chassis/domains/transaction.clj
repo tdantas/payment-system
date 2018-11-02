@@ -1,18 +1,23 @@
 (ns chassis.domains.transaction
   (:require [clojure.core :as clj]
             [cats.core :refer [foldl return]]
+            [chassis.http :refer [WebDTO]]
             [camel-snake-kebab.core :refer [->kebab-case-keyword]]
             [camel-snake-kebab.extras :refer [transform-keys]]
             [chassis.failure :refer [wrap-try failure exception]]
             [cats.monad.either :refer [left right]]
             [chassis.repositories.transactions :as rtx]))
 
-
 (def status-order {"AUTHORIZED" 0
                    "SUBMITTED_FOR_SETTLEMENT" 0
                    "SETTLED" 2})
 
-(defrecord Transaction [id order-id amount status response created-at gateway-id uuid type final-state provider tx-parent-id])
+(defn dto [{:keys [id order-id amount status gateway-id type provider]}]
+ {:id id :order-id order-id :amoub amount :status status :gateway-id gateway-id :type type :provider provider})
+
+(defrecord Transaction [id order-id amount status response created-at gateway-id uuid type final-state provider tx-parent-id]
+  WebDTO
+  (-dto [this] (dto this)))
 
 (defn build [{:keys [order-id uuid status amount response gateway-id final-state type tx-parent-id provider]}]
   (map->Transaction {:order-id order-id
@@ -151,20 +156,3 @@
 (defn generate-commands [refund-amount eligible-txs]
   (println eligible-txs)
   (right (reduce command-reducer {:amount refund-amount :commands []} eligible-txs)))
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

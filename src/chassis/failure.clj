@@ -1,34 +1,46 @@
 (ns chassis.failure
   (:require [cats.monad.either :refer [lefts left right]]
             [clojure.core.match :as pattern]
+            [chassis.http :refer [WebDTO]]
             [clojure.stacktrace :as st]
-            [chassis.http :refer [dto]]
             [clojure.tools.logging :as log]))
 
 (defn capture-stack-trace [e]
   (with-out-str
     (st/print-stack-trace e)))
 
-(defrecord Failure [msg])
-(defrecord ValidationError [msg errors])
-(defrecord AppError [msg ^Throwable exception stacktrace])
-
-(defmethod dto Failure [{msg :msg}]
+(defn failure->dto [{msg :msg}]
   {:type :failure
    :msg msg
    :http-status-code 422})
 
-(defmethod dto AppError [{msg :msg st :stacktrace}]
+(defn app-error->dto [{msg :msg st :stacktrace}]
   {:type :error
    :msg msg
    :stacktrace st
    :http-status-code 500})
 
-(defmethod dto ValidationError [{msg :msg errors :errors}]
+(defn validation->dto [{msg :msg errors :errors}]
   {:type :validation
    :msg msg
    :errors errors
    :http-status-code 412})
+
+(defrecord Failure [msg]
+  WebDTO
+  (-dto [fail]
+    (failure->dto fail)))
+
+(defrecord ValidationError [msg errors]
+  WebDTO
+  (-dto [ve]
+    (validation->dto ve)))
+
+(defrecord AppError [msg ^Throwable exception stacktrace]
+  WebDTO
+  (-dto [err]
+    (app-error->dto err)))
+
 
 (defn validation-error [msg errors]
   (map->ValidationError {:msg msg :errors errors}))
